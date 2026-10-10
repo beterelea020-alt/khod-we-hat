@@ -22,7 +22,8 @@ export const supabaseAuth = {
       const id = crypto.randomUUID();
       await query('INSERT INTO auth.users(id,email) VALUES($1,$2)', [id, email.toLowerCase()]);
       creds.set(email.toLowerCase(), { id, password });
-      return { data: { user: { id, email }, session: null }, error: null };
+      // Like a Supabase project with "Confirm email" OFF (the local default): sign-up returns a session immediately.
+      return { data: { user: { id, email }, session: session(id) }, error: null };
     },
     async signInWithPassword({ email, password }) {
       const c = creds.get(String(email).toLowerCase());
@@ -52,6 +53,12 @@ export const supabaseAdmin = {
         if (attrs.ban_duration) { if (attrs.ban_duration === 'none') banned.delete(id); else banned.add(id); }
         if (attrs.password) for (const c of creds.values()) if (c.id === id) c.password = attrs.password;
         return { data: { user: { id } }, error: null };
+      },
+      async createUser({ email, password }) {
+        const id = crypto.randomUUID();
+        await query('INSERT INTO auth.users(id,email) VALUES($1,$2)', [id, email.toLowerCase()]);
+        creds.set(email.toLowerCase(), { id, password });
+        return { data: { user: { id, email } }, error: null };
       },
       async deleteUser(id) { await query('DELETE FROM auth.users WHERE id=$1', [id]); return { data: {}, error: null }; },
       async generateLink() { return { data: { properties: { action_link: 'http://localhost/recovery' } }, error: null }; },

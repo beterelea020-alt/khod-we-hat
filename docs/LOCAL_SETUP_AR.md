@@ -54,6 +54,13 @@ npm run dev           # الموقع + الـ API على http://localhost:4000
 - Studio (الجداول): http://127.0.0.1:54323 — البريد التجريبي (Mailpit): http://127.0.0.1:54324
 - الموقع و`/api` على نفس العنوان (لا حاجة لسيرفر آخر).
 
+
+## 3.5) فحص البيئة تلقائيًا (ابدأ به عند أي مشكلة)
+```powershell
+npm run doctor
+```
+يفحص: متغيرات `.env`، اتصال القاعدة، الجداول وأعمدة الصوت، مخازن الملفات (`voice` خاص)، التحديث اللحظي، تشغيل Supabase Auth وإعدادات التسجيل، **إنشاء مستخدم تجريبي ودخوله**، و**رفع تسجيل صوتي تجريبي**. ويقول لك بالضبط ماذا تصلح (`✗` + `الحل`). للسحابة: `node --env-file=.env.cloud scripts/doctor.mjs`.
+
 ## 4) الاختبارات الآلية
 ```powershell
 npm test              # 118 اختبار تكامل على قاعدتك المحلية
@@ -76,4 +83,5 @@ cloudflared tunnel --url http://localhost:4000      # يطبع رابط https://
 | `docker: command not found` | Docker غير مثبّت/غير شغّال |
 | `supabase start` يفشل بخطأ SQL | تأكد أن `supabase/migrations` غير موجود أو فارغ (القاعدة تُبنى بـ `npm run seed`) |
 | خطأ اتصال بالقاعدة | `DB_SSL=false` والمنفذ `54322` وأن Supabase شغّال |
+| الرسائل الصوتية لا تعمل | الميكروفون يحتاج `localhost` أو `https` (لا يعمل من `http://192.168...`)، وتأكد من `npm run seed` (أعمدة الصوت ومخزن `voice`) ثم `npm run doctor` |
 | صفحة بيضاء + `Unexpected token '<'` | ملفات `frontend/js` ناقصة؛ يجب وجود 8 ملفات (`admin, about, app, auth, core, exchange-engine, people, views`) |

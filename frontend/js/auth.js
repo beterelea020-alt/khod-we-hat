@@ -86,10 +86,21 @@ function registerForm(box) {
       <button class="btn primary block" id="rb" type="submit" style="min-height:50px;margin-top:10px">إنشاء الحساب</button>
     </form>`;
   $('#rpw').oninput = e => { const s = pwScore(e.target.value); const bar = $('#pwbar'); bar.className = `pwbar ${s === 3 ? 's' : s === 2 ? 'm' : ''}`; $$('i', bar).forEach((i, k) => i.classList.toggle('on', k < s)); $('#pwhint').textContent = ['', 'ضعيفة — زوّد الطول وأضف أرقام', 'جيدة', 'قوية'][s] || ''; };
+  $('#rf').oninput = e => e.target.removeAttribute?.('aria-invalid');
   $('#rf').onsubmit = async e => {
     e.preventDefault(); const err = $('#auth-err'); err.innerHTML = '';
-    const body = { name: $('#rn').value.trim(), username: $('#ru').value.trim(), email: $('#re').value.trim(), password: $('#rpw').value, phone: $('#rph').value.trim(), city: $('#rc').value.trim(), country: 'مصر' };
-    if (body.name.length < 2 || !/^[A-Za-z0-9_.-]{3,40}$/.test(body.username) || !/^\S+@\S+\.\S+$/.test(body.email) || body.password.length < 8 || !$('#rt').checked) { err.innerHTML = `<div class="alert err">${icon('info')}راجع البيانات: اسم المستخدم بالإنجليزية (3 أحرف+)، بريد صحيح، كلمة مرور 8 أحرف+، وتوافق على الشروط.</div>`; return; }
+    const arDigits = t => t.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));            // ٠١٠١٢٣٤٥٦٧٨ → 01012345678
+    const body = { name: $('#rn').value.trim(), username: $('#ru').value.trim(), email: $('#re').value.trim(), password: $('#rpw').value, phone: arDigits($('#rph').value.trim()), city: $('#rc').value.trim(), country: 'مصر' };
+    const problems = [];
+    if (body.name.length < 2) problems.push(['rn', 'الاسم: اكتب اسمك (حرفين على الأقل)']);
+    if (!/^[A-Za-z0-9_.-]{3,40}$/.test(body.username)) problems.push(['ru', 'اسم المستخدم: من 3 إلى 40 حرف إنجليزي أو رقم أو ( . _ - ) — من غير مسافات ولا حروف عربي']);
+    if (!/^\S+@\S+\.\S+$/.test(body.email)) problems.push(['re', 'البريد الإلكتروني: اكتبه بشكل صحيح مثل name@example.com']);
+    if (body.phone && !/^\+?[0-9][0-9\s().-]{6,19}$/.test(body.phone)) problems.push(['rph', 'رقم الهاتف: أرقام فقط، مثال 01012345678']);
+    if (body.password.length < 8) problems.push(['rpw', 'كلمة المرور: 8 أحرف على الأقل']);
+    else if (body.password.length > 72) problems.push(['rpw', 'كلمة المرور: أقصاها 72 حرف']);
+    if (!$('#rt').checked) problems.push(['rt', 'لازم توافق على الشروط عشان تكمل']);
+    $$('#rf [aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
+    if (problems.length) { problems.forEach(([id]) => $('#' + id).setAttribute('aria-invalid', 'true')); err.innerHTML = `<div class="alert err">${icon('info')}<ul class="errlist">${problems.map(([, m]) => `<li>${esc(m)}</li>`).join('')}</ul></div>`; $('#' + problems[0][0]).focus(); return; }
     const btn = $('#rb'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span> جارٍ الإنشاء…';
     try {
       const j = await api('/auth/register', { method: 'POST', body, auth: false });

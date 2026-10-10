@@ -181,17 +181,20 @@ async function viewChat(el, [connId]) {
 
   // Voice messages (MediaRecorder → low-bitrate Opus; needs HTTPS or localhost for microphone access).
   const secure = location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname);
-  if (!(secure && navigator.mediaDevices?.getUserMedia && window.MediaRecorder)) $('#mic').remove();
+  const micOk = secure && !!navigator.mediaDevices?.getUserMedia && !!window.MediaRecorder;
+  if (!micOk) { const mb = $('#mic'); mb.classList.add('off'); mb.onclick = () => toast(!secure ? 'التسجيل الصوتي يحتاج اتصالًا آمنًا: افتح الموقع من localhost أو من رابط https' : 'متصفحك لا يدعم التسجيل الصوتي — جرّب Chrome أو Safari حديث', 'err'); }
+  const micErr = x => ({ NotAllowedError: 'الميكروفون محظور. اضغط على أيقونة القفل بجانب عنوان الموقع واسمح بالميكروفون', PermissionDeniedError: 'الميكروفون محظور. اسمح به من إعدادات المتصفح', NotFoundError: 'مفيش ميكروفون متوصّل بالجهاز', NotReadableError: 'الميكروفون مستخدم من برنامج تاني، اقفله وجرّب', SecurityError: 'المتصفح منع الميكروفون لأسباب أمان' })[x?.name] || `تعذّر تشغيل الميكروفون (${x?.name || 'خطأ'})`;
   let rec = null, recTimer = null;
   const endRec = () => { clearInterval(recTimer); rec?.stream.getTracks().forEach(t => t.stop()); $('#cf').classList.remove('recording'); $('#rbar').hidden = true; $('#mic')?.removeAttribute('disabled'); };
   const blobToDataUrl = b => new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); });
-  if ($('#mic')) $('#mic').onclick = async () => {
+  if (micOk) $('#mic').onclick = async () => {
     if (rec) return;
-    let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch { toast('اسمح باستخدام الميكروفون من إعدادات المتصفح', 'err'); return; }
+    let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (x) { toast(micErr(x), 'err'); return; }
     const type = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'].find(t => MediaRecorder.isTypeSupported?.(t)) || '';
-    const mr = new MediaRecorder(stream, { ...(type ? { mimeType: type } : {}), audioBitsPerSecond: 32000 });
+    let mr; try { mr = new MediaRecorder(stream, { ...(type ? { mimeType: type } : {}), audioBitsPerSecond: 32000 }); } catch (x) { stream.getTracks().forEach(t => t.stop()); toast(`المتصفح لا يقدر يسجّل صوت هنا (${x?.name || 'خطأ'})`, 'err'); return; }
     const me = rec = { mr, stream, chunks: [], t0: Date.now(), send: false };
     mr.ondataavailable = ev => { if (ev.data.size) me.chunks.push(ev.data); };
+    mr.onerror = () => { toast('حصل خطأ أثناء التسجيل، جرّب تاني', 'err'); me.send = false; endRec(); rec = null; };
     mr.onstop = async () => {
       endRec(); rec = null;
       if (!me.send) return;
@@ -199,7 +202,7 @@ async function viewChat(el, [connId]) {
       const blob = new Blob(me.chunks, { type: mr.mimeType || type || 'audio/webm' });
       if (blob.size < 300) { toast('التسجيل قصير جدًا', 'err'); return; }
       if (blob.size > 1_400_000) { toast('التسجيل كبير جدًا', 'err'); return; }
-      try { const out = await api(`/chats/${active}/voice`, { method: 'POST', body: { data_url: await blobToDataUrl(blob), seconds: secs } }); add([out.data]); box.scrollTop = box.scrollHeight; } catch (x) { toast(errMsg(x), 'err'); }
+      try { const out = await api(`/chats/${active}/voice`, { method: 'POST', body: { data_url: await blobToDataUrl(blob), seconds: secs } }); add([out.data]); box.scrollTop = box.scrollHeight; } catch (x) { console.error('voice upload failed', x); toast(x.code === 'UPLOAD_FAILED' || x.status >= 500 ? 'تعذّر حفظ التسجيل على الخادم. جرّب تاني، ولو اتكرر بلّغ المسؤول.' : errMsg(x), 'err'); }
     };
     mr.start(); $('#cf').classList.add('recording'); $('#rbar').hidden = false; $('#rt').textContent = '0:00';
     recTimer = setInterval(() => { const sec = Math.floor((Date.now() - me.t0) / 1000); $('#rt').textContent = fmtDur(sec); if (sec >= 120) $('#rsend').click(); }, 250);

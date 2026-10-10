@@ -68,4 +68,5 @@ The admin settings screen can enable/disable the universal engine and its asset 
 - **[docs/DEPLOY_AR.md](docs/DEPLOY_AR.md)** — deploy to Vercel + cloud Supabase (`npm run check:cloud` validates your cloud settings first).
 - **[docs/CHANGES.md](docs/CHANGES.md)** — what was added on top of v3 (chat voice, About page, admin hardening, tests) and what is still unverified.
 - **[docs/project-idea.html](docs/project-idea.html)** — graduation-project idea document (Arabic).
+- Diagnostics: `npm run doctor` checks env, DB schema, storage buckets, sign-up and voice upload, and tells you what to fix.
 - Tests: `npm test` (needs the local Supabase database; refuses non-local databases).

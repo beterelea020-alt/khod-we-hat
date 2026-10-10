@@ -12,7 +12,8 @@
     "check": "node --check backend/src/app.js && node --check api/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check:cloud": "node scripts/check-cloud-env.mjs"
+    "check:cloud": "node scripts/check-cloud-env.mjs",
+    "doctor": "node scripts/doctor.mjs"
   },
   "engines": {
     "node": ">=20"

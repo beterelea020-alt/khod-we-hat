@@ -29,7 +29,7 @@ export function parseVoice(dataUrl) {
 export async function storeVoice(connectionId, { buf, mime, ext }) {
   const path = `${connectionId}/${crypto.randomUUID()}.${ext}`;
   const up = await assertSupabaseAdmin().storage.from(VOICE_BUCKET).upload(path, buf, { contentType: mime, cacheControl: '3600', upsert: false });
-  if (up.error) throw httpError(502, 'تعذّر رفع التسجيل', 'UPLOAD_FAILED');
+  if (up.error) { console.error('[voice] storage upload failed:', up.error.message || up.error, '— is the "voice" bucket created? run: npm run seed'); throw httpError(502, 'تعذّر رفع التسجيل', 'UPLOAD_FAILED'); }
   return path;
 }
 

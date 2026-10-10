@@ -251,3 +251,7 @@ body{background:radial-gradient(circle at 10% -10%,rgba(220,38,38,.05),transpare
 .ab-actions{position:sticky;bottom:calc(var(--bottom,0px) + 8px);background:var(--surface);padding:10px;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
 @media (max-width:560px){.ab-hero{padding:22px 18px}.ab-team{grid-template-columns:1fr 1fr}.ab-sup{flex-direction:column;text-align:center}}
 .ab-initials svg{width:44%;height:44%}
+.input[aria-invalid="true"],.field input[aria-invalid="true"]{border-color:var(--danger,#DC2626);box-shadow:0 0 0 3px rgba(220,38,38,.15)}
+.check input[aria-invalid="true"]{outline:2px solid var(--danger,#DC2626);outline-offset:2px}
+.errlist{margin:0;padding-inline-start:18px;line-height:1.8}
+.mic.off{opacity:.55}

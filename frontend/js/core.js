@@ -112,14 +112,33 @@ const get = (p, o) => api(p, o).then(j => j.data);
 
 /* ───────── UI: toast / modal / confirm ───────── */
 function toast(msg, kind = '') { const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = msg; $('#toasts').append(el); setTimeout(() => el.remove(), 4200); }
-const errMsg = e => (e?.errors?.fieldErrors && Object.values(e.errors.fieldErrors).flat()[0]) || e?.message || 'حدث خطأ';
+const FIELD_AR = { name: 'الاسم', username: 'اسم المستخدم', email: 'البريد الإلكتروني', password: 'كلمة المرور', phone: 'رقم الهاتف', city: 'المدينة', country: 'الدولة', bio: 'النبذة', headline: 'العنوان التعريفي', title: 'العنوان', description: 'الوصف', body: 'الرسالة', note: 'الملاحظة', message: 'الرسالة', reason: 'السبب', rating: 'التقييم', comment: 'التعليق', category_id: 'التصنيف', skill_id: 'المهارة', company: 'الجهة', location: 'المكان', seconds: 'مدة التسجيل', data_url: 'الملف' };
+function zodMsgAr(m = '') {
+  let x;
+  if (/^Invalid email/i.test(m)) return 'بريد غير صحيح';
+  const chars = n => (n === 1 ? 'حرف واحد' : n === 2 ? 'حرفين' : n <= 10 ? `${n} أحرف` : `${n} حرفًا`);
+  if ((x = /at least (\d+) character/.exec(m))) return `لا يقل عن ${chars(+x[1])}`;
+  if ((x = /at most (\d+) character/.exec(m))) return `لا يزيد عن ${chars(+x[1])}`;
+  if (/^Username may contain/.test(m)) return 'حروف إنجليزية وأرقام و ( . _ - ) فقط';
+  if (/^Required$/.test(m)) return 'مطلوب';
+  if (/Invalid enum value|Invalid option/.test(m)) return 'قيمة غير مقبولة';
+  if (/Number must be/.test(m)) return 'رقم خارج المدى المسموح';
+  if (/^(Invalid|Expected)/.test(m)) return 'قيمة غير صالحة';
+  return m;
+}
+const API_MSG_AR = { 'Validation failed': 'البيانات غير صالحة، راجعها وحاول تاني', 'Route not found': 'الخدمة دي مش موجودة في نسخة السيرفر الحالية (غالبًا محتاج تحديث الباك إند)' };
+const errMsg = e => {
+  const fe = e?.errors?.fieldErrors;
+  if (fe && Object.keys(fe).length) return Object.entries(fe).slice(0, 3).map(([k, v]) => `${FIELD_AR[k] || k}: ${zodMsgAr(v[0])}`).join(' — ');
+  return API_MSG_AR[e?.message] || e?.message || 'حدث خطأ';
+};
 let modalStack = [];
 function openModal({ title, body, footer = '', wide = false, onMount, onClose } = {}) {
   const root = $('#modal-root'); const prev = document.activeElement;
   const ov = document.createElement('div'); ov.className = 'overlay';
   ov.innerHTML = `<div class="modal ${wide ? 'wide' : ''}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-h"><h3>${esc(title)}</h3><button class="icon-btn" data-x aria-label="إغلاق">${icon('x')}</button></div><div class="modal-b">${body}</div>${footer ? `<div class="modal-f">${footer}</div>` : ''}</div>`;
   const close = () => { ov.remove(); modalStack = modalStack.filter(m => m !== api2); onClose?.(); prev?.focus?.(); };
-  const api2 = { el: ov, close, $: s => $(s, ov), $$: s => $$(s, ov) };
+  const api2 = { el: ov, root: ov, close, $: s => $(s, ov), $$: s => $$(s, ov) };
   ov.addEventListener('mousedown', e => { if (e.target === ov) close(); });
   ov.addEventListener('keydown', e => {
     if (e.key === 'Escape') { e.stopPropagation(); close(); }

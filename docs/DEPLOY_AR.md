@@ -64,6 +64,7 @@ git push -u origin main
 4. ضع الرابط في `CLIENT_URL` و`PASSWORD_RESET_REDIRECT_URL` (Vercel) وفي Supabase *Site URL*، ثم **Redeploy**.
 
 ## 7) فحص سريع بعد النشر
+- من جهازك، على إعدادات السحابة: `node --env-file=.env.cloud scripts/doctor.mjs` (يجرّب إنشاء مستخدم ورفع تسجيل صوتي فعليًا).
 - `https://<app>/api/health` ← `"status":"ok"`
 - `https://<app>/api/about` ← بيانات
 - `https://<app>/#/about` ← الصفحة تفتح بدون تسجيل دخول
